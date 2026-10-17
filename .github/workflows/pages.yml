@@ -1,4 +1,5 @@
 name: Deploy Neon Escape to GitHub Pages
+# Retry deployment after enabling GitHub Pages
 on:
   push:
     branches: [main]
