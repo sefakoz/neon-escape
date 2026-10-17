@@ -296,7 +296,7 @@ func _draw() -> void:
 	for e in enemies:
 		var p: Vector2 = e["pos"]
 		var kind: int = e["kind"]
-		var col := [Color("#ff4e93"), Color("#ff9e63"), Color("#c38cff")][kind]
+		var col: Color = [Color("#ff4e93"), Color("#ff9e63"), Color("#c38cff")][kind]
 		draw_circle(p, 26, Color(col, .13))
 		draw_arc(p, 18, 0, TAU, 12, col, 4)
 		draw_circle(p, 9, col)
