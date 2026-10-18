@@ -1,0 +1,10 @@
+{
+  "name": "neon-escape-game",
+  "compatibility_date": "2026-10-17",
+  "main": "src/worker.js",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  }
+}
