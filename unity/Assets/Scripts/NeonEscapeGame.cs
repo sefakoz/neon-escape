@@ -15,6 +15,7 @@ public class NeonEscapeGame : MonoBehaviour
     public GameObject crystalPrefab;
     public GameObject powerupPrefab;
 
+    NeonMazeWorld maze;
     Transform hero;
     Camera gameCamera;
     readonly List<Transform> enemies = new List<Transform>();
@@ -36,14 +37,12 @@ public class NeonEscapeGame : MonoBehaviour
             gameCamera = cameraObject.AddComponent<Camera>();
             cameraObject.tag = "MainCamera";
         }
+        maze = GetComponent<NeonMazeWorld>();
+        if (!maze) maze = gameObject.AddComponent<NeonMazeWorld>();
         var light = new GameObject("Sun").AddComponent<Light>();
         light.type = LightType.Directional;
         light.intensity = 1.8f;
         light.transform.rotation = Quaternion.Euler(55, -30, 0);
-        var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        floor.name = "Arena (replace with licensed 3D environment)";
-        floor.transform.localScale = Vector3.one * 5;
-        floor.GetComponent<Renderer>().material.color = new Color(.12f, .19f, .32f);
         NewRound();
     }
 
@@ -53,7 +52,7 @@ public class NeonEscapeGame : MonoBehaviour
         foreach (var pickup in pickups) if (pickup.item) Destroy(pickup.item.gameObject);
         enemies.Clear(); pickups.Clear();
         if (hero) Destroy(hero.gameObject);
-        hero = CreateObject(heroPrefab, PrimitiveType.Capsule, "Hero", Color.cyan, new Vector3(0, 1, 0));
+        hero = CreateObject(heroPrefab, PrimitiveType.Capsule, "Hero", Color.cyan, maze ? maze.StartPosition : new Vector3(0, 1, 0));
         remaining = roundSeconds; hearts = startingHearts; score = 0;
         spawnTimer = 0; pickupTimer = 0; invulnerable = 2; powered = 0;
         touchFinger = -1; stickVector = Vector2.zero; playing = true;
@@ -78,8 +77,11 @@ public class NeonEscapeGame : MonoBehaviour
         Vector2 keyboard = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         Vector2 movement = (stickVector + keyboard).normalized;
         Vector3 motion = new Vector3(movement.x, 0, movement.y);
-        hero.position += motion * playerSpeed * dt;
-        hero.position = new Vector3(Mathf.Clamp(hero.position.x, -22, 22), 1, Mathf.Clamp(hero.position.z, -22, 22));
+        Vector3 step = motion * playerSpeed * dt;
+        Vector3 nextX = hero.position + new Vector3(step.x, 0, 0);
+        if (!maze || maze.CanWalk(nextX)) hero.position = nextX;
+        Vector3 nextZ = hero.position + new Vector3(0, 0, step.z);
+        if (!maze || maze.CanWalk(nextZ)) hero.position = nextZ;
         if (motion.sqrMagnitude > .01f) hero.rotation = Quaternion.Slerp(hero.rotation, Quaternion.LookRotation(motion), dt * 12);
         Vector3 cameraTarget = hero.position + new Vector3(0, 20, -16);
         gameCamera.transform.position = Vector3.Lerp(gameCamera.transform.position, cameraTarget, dt * 6);
@@ -96,7 +98,8 @@ public class NeonEscapeGame : MonoBehaviour
             var e = enemies[i];
             if (!e) { enemies.RemoveAt(i); continue; }
             Vector3 delta = hero.position - e.position; delta.y = 0;
-            e.position += delta.normalized * (2.4f + (roundSeconds - remaining) * .015f) * dt;
+            Vector3 enemyStep = delta.normalized * (2.4f + (roundSeconds - remaining) * .015f) * dt;
+            if (!maze || maze.CanWalk(e.position + enemyStep)) e.position += enemyStep;
             if (delta.sqrMagnitude < 2.25f)
             {
                 if (powered > 0)
@@ -122,6 +125,7 @@ public class NeonEscapeGame : MonoBehaviour
             }
         }
         if (statusText) statusText.text = "♥ " + hearts + "    ◆ " + score + "    " + Mathf.CeilToInt(Mathf.Max(0, remaining)) + "s" + (powered > 0 ? "    POWER" : "");
+        if (maze && maze.ReachedGoal(hero.position)) { score += 250; EndRound(); }
         if (remaining <= 0) EndRound();
     }
 
@@ -151,7 +155,7 @@ public class NeonEscapeGame : MonoBehaviour
     void SpawnEnemy()
     {
         float a = Random.Range(0, Mathf.PI * 2);
-        Vector3 position = hero.position + new Vector3(Mathf.Cos(a) * 18, 0, Mathf.Sin(a) * 18);
+        Vector3 position = maze ? maze.RandomFloorPosition() : hero.position + new Vector3(Mathf.Cos(a) * 18, 0, Mathf.Sin(a) * 18);
         position.y = 1;
         enemies.Add(CreateObject(enemyPrefab, PrimitiveType.Cube, "Enemy", new Color(1, .2f, .4f), position));
     }
@@ -159,7 +163,7 @@ public class NeonEscapeGame : MonoBehaviour
     void SpawnPickup()
     {
         bool power = Random.value < .22f;
-        Vector3 pos = new Vector3(Random.Range(-19f, 19f), 1, Random.Range(-19f, 19f));
+        Vector3 pos = maze ? maze.RandomFloorPosition() : new Vector3(Random.Range(-19f, 19f), 1, Random.Range(-19f, 19f));
         var item = CreateObject(power ? powerupPrefab : crystalPrefab, PrimitiveType.Sphere, power ? "Powerup" : "Crystal", power ? Color.green : Color.yellow, pos);
         item.localScale = Vector3.one * .65f;
         pickups.Add(new Pickup { item = item, isPower = power });
