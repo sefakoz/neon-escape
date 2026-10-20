@@ -197,6 +197,13 @@ public class NeonMazeWorld : MonoBehaviour
         return GridToWorld(cells[Random.Range(0, cells.Count)]) + Vector3.up;
     }
 
+    public Vector2Int WorldToCell(Vector3 position) =>
+        new Vector2Int(Mathf.RoundToInt(position.x / cellSize + (width - 1) * .5f),
+                       Mathf.RoundToInt(position.z / cellSize + (height - 1) * .5f));
+
+    public bool IsCorridor(int x, int y) =>
+        open != null && x >= 0 && y >= 0 && x < width && y < height && open[x,y];
+
     public bool ReachedGoal(Vector3 position) => Vector3.Distance(
         new Vector3(position.x, 0, position.z), GridToWorld(goal)) < 1.6f;
 }
