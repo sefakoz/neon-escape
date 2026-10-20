@@ -16,6 +16,7 @@ public class NeonEscapeGame : MonoBehaviour
     public GameObject powerupPrefab;
 
     NeonMazeWorld maze;
+    NeonMiniMap miniMap;
     Transform hero;
     Camera gameCamera;
     readonly List<Transform> enemies = new List<Transform>();
@@ -53,6 +54,9 @@ public class NeonEscapeGame : MonoBehaviour
         enemies.Clear(); pickups.Clear();
         if (hero) Destroy(hero.gameObject);
         hero = CreateObject(heroPrefab, PrimitiveType.Capsule, "Hero", Color.cyan, maze ? maze.StartPosition : new Vector3(0, 1, 0));
+        if (!miniMap) miniMap = GetComponent<NeonMiniMap>() ? GetComponent<NeonMiniMap>() : gameObject.AddComponent<NeonMiniMap>();
+        miniMap.maze = maze;
+        miniMap.target = hero;
         remaining = roundSeconds; hearts = startingHearts; score = 0;
         spawnTimer = 0; pickupTimer = 0; invulnerable = 2; powered = 0;
         touchFinger = -1; stickVector = Vector2.zero; playing = true;
