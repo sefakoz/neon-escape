@@ -16,10 +16,6 @@ public class NeonMiniMap : MonoBehaviour
         pixel = new Texture2D(1, 1, TextureFormat.RGBA32, false);
         pixel.SetPixel(0, 0, Color.white);
         pixel.Apply();
-        titleStyle = new GUIStyle(GUI.skin.label);
-        titleStyle.fontSize = 12;
-        titleStyle.fontStyle = FontStyle.Bold;
-        titleStyle.normal.textColor = new Color(.45f, .95f, 1f);
     }
 
     void Update()
@@ -48,6 +44,13 @@ public class NeonMiniMap : MonoBehaviour
     void OnGUI()
     {
         if (!maze || !target || discovered == null) return;
+        if (titleStyle == null)
+        {
+            titleStyle = new GUIStyle(GUI.skin.label);
+            titleStyle.fontSize = 12;
+            titleStyle.fontStyle = FontStyle.Bold;
+            titleStyle.normal.textColor = new Color(.45f, .95f, 1f);
+        }
         float size = Mathf.Min(panelSize, Screen.width * .34f, Screen.height * .34f);
         var panel = new Rect(Screen.width - size - 18, Screen.height - size - 28, size, size + 10);
         Draw(panel, new Color(.015f, .025f, .06f, .88f));
